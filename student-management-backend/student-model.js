@@ -1,21 +1,11 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
-// Define the schema for a student
 const studentSchema = new mongoose.Schema({
-  reg: {
-    type: String,
-    required: true,
-    unique: true,  // Ensure registration number is unique
-  },
-  name: {
-    type: String,
-    required: true,
-  },
-  date: {
-    type: Date,  // Use Date type for better handling
-    required: true,
-  },
+    name: { type: String, required: true },
+    date: { type: String, required: true }, // Use Date if you prefer
+    reg: { type: String, required: true, unique: true }
 });
 
-// Export the model
-export default mongoose.model("Student", studentSchema);
+const Student = mongoose.model('Student', studentSchema);
+
+export default Student;

@@ -2,7 +2,7 @@ import bodyParser from 'body-parser';
 import cors from 'cors';
 import express from 'express';
 import mongoose from 'mongoose';
-import Student from './student-model.js'; // Correctly import the student model
+import Student from './student-model.js'; // Import your student model
 
 const app = express();
 
@@ -29,6 +29,19 @@ app.post('/students', (req, res) => {
     .catch((error) => {
       res.status(500).send("Error adding student: " + error.message);
     });
+});
+
+// GET route to fetch students
+app.get("/students", (req, res) => {
+    Student.find()
+        .then((students) => {
+            console.log("Students fetched:", students); // Log the fetched students
+            res.send(students);
+        })
+        .catch((error) => {
+            console.error("Error fetching students:", error);
+            res.status(500).send("Error fetching students: " + error.message);
+        });
 });
 
 // Start the server

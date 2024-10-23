@@ -4,35 +4,26 @@ import { FaEdit, FaPlus } from "react-icons/fa";
 import { IoTrashBin } from "react-icons/io5";
 
 function App() {
-  const [students, setStudents] = useState([
-    {
-      name: 'Alice Johnson',
-      date: '2024-01-10',
-      reg: '20APC0001'
-    },
-    {
-      name: 'Bob Smith',
-      date: '2024-01-12',
-      reg: '20APC0002'
-    },
-    {
-      name: 'Charlie Brown',
-      date: '2024-01-14',
-      reg: '20APC0003'
-    },
-  ]);
+  const [students, setStudents] = useState([]);
+  const [studentLoaded, setStudentLoaded] = useState(false);
+  
+  useEffect(() => {
+    const fetchStudents = async () => {
+      try {
+        const res = await axios.get("http://localhost:5000/students");
+        console.log("Fetched students:", res.data); // Check the data
+        setStudents(res.data); // Update state with the fetched data
+      } catch (err) {
+        console.error("Error fetching students:", err); // Log any errors
+        alert("Error fetching students: " + err.message);
+      }
+    };
 
-  const [studentLoaded,setStudentLoaded]=useState(false)
-  useEffect(()=>{
-    if(!studentLoaded){
-      axios.get("http://localhost:5000/students").
-      then((res)=>{
-        setStudents(res.data)
-        setStudentLoaded(true)
-      })
+    if (!studentLoaded) {
+      fetchStudents();
+      setStudentLoaded(true); // Mark as loaded to prevent re-fetch
     }
-
-  },[students,studentLoaded])
+  }, [studentLoaded]); // Depend only on studentLoaded
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newStudent, setNewStudent] = useState({
@@ -51,7 +42,6 @@ function App() {
   const addStudent = () => {
     axios.post("http://localhost:5000/students", newStudent)
       .then(() => {
-        // Update local state only if the request is successful
         setStudents([...students, newStudent]);
         alert("Student Added");
       })
@@ -66,7 +56,6 @@ function App() {
 
   return (
     <div className="flex flex-col items-center">
-      {/* Add Button */}
       <button 
         className="fixed bottom-6 right-6 bg-blue-500 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition"
         onClick={() => setIsModalOpen(true)} // Open modal on click
@@ -76,7 +65,6 @@ function App() {
 
       <h1 className="text-2xl font-bold mb-4">Student List</h1>
 
-      {/* Student Table */}
       <div className="w-full max-w-4xl border border-gray-300 rounded-lg shadow-md overflow-hidden">
         <div className="bg-gray-100 px-4 py-2 flex font-semibold">
           <div className="w-1/4">Registration</div>
@@ -84,24 +72,27 @@ function App() {
           <div className="w-1/4">Date</div>
           <div className="w-1/4 text-center">Actions</div>
         </div>
-        {students.map((std) => (
-          <div key={std.reg} className="flex justify-between items-center px-4 py-2 border-b hover:bg-gray-50">
-            <div className="w-1/4">{std.reg}</div>
-            <div className="w-1/2">{std.name}</div>
-            <div className="w-1/4">{std.date}</div>
-            <div className="w-1/4 flex justify-center space-x-2">
-              <button className="text-blue-600 hover:text-blue-800 transition">
-                <FaEdit />
-              </button>
-              <button className="text-red-600 hover:text-red-800 transition">
-                <IoTrashBin />
-              </button>
+        {students.length > 0 ? (
+          students.map((std) => (
+            <div key={std.reg} className="flex justify-between items-center px-4 py-2 border-b hover:bg-gray-50">
+              <div className="w-1/4">{std.reg}</div>
+              <div className="w-1/2">{std.name}</div>
+              <div className="w-1/4">{std.date}</div>
+              <div className="w-1/4 flex justify-center space-x-2">
+                <button className="text-blue-600 hover:text-blue-800 transition">
+                  <FaEdit />
+                </button>
+                <button className="text-red-600 hover:text-red-800 transition">
+                  <IoTrashBin />
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
+          ))
+        ) : (
+          <div className="text-center py-4">No students found.</div>
+        )}
       </div>
 
-      {/* Modal for Adding Student */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
