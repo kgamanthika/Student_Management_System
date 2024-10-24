@@ -1,7 +1,6 @@
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { FaEdit, FaPlus } from "react-icons/fa";
-import { IoTrashBin } from "react-icons/io5";
 
 function App() {
   const [students, setStudents] = useState([]);
@@ -11,19 +10,19 @@ function App() {
     const fetchStudents = async () => {
       try {
         const res = await axios.get("http://localhost:5000/students");
-        console.log("Fetched students:", res.data); // Check the data
-        setStudents(res.data); // Update state with the fetched data
+        console.log("Fetched students:", res.data); // Logging fetched students to check _id
+        setStudents(res.data);
       } catch (err) {
-        console.error("Error fetching students:", err); // Log any errors
+        console.error("Error fetching students:", err);
         alert("Error fetching students: " + err.message);
       }
     };
 
     if (!studentLoaded) {
       fetchStudents();
-      setStudentLoaded(true); // Mark as loaded to prevent re-fetch
+      setStudentLoaded(true);
     }
-  }, [studentLoaded]); // Depend only on studentLoaded
+  }, [studentLoaded]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newStudent, setNewStudent] = useState({
@@ -50,15 +49,30 @@ function App() {
         alert("Error adding student: " + err.message);
       });
 
-    setNewStudent({ name: '', date: '', reg: '' }); // Clear input fields
-    setIsModalOpen(false); // Close the modal
+    setNewStudent({ name: '', date: '', reg: '' });
+    setIsModalOpen(false);
   };
+
+  // Delete student by _id
+  const deleteStudent = (id) => {
+    axios.delete(`http://localhost:5000/students/${id}`)
+      .then(() => {
+        setStudents(students.filter(student => student._id !== id)); // Update UI after deletion
+        alert("Student deleted");
+      })
+      .catch((err) => {
+        console.error("Error deleting student:", err);
+        alert("Error deleting student: " + err.message);
+      });
+  };
+
+  
 
   return (
     <div className="flex flex-col items-center">
       <button 
         className="fixed bottom-6 right-6 bg-blue-500 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition"
-        onClick={() => setIsModalOpen(true)} // Open modal on click
+        onClick={() => setIsModalOpen(true)}
       >
         <FaPlus />
       </button>
@@ -72,9 +86,10 @@ function App() {
           <div className="w-1/4">Date</div>
           <div className="w-1/4 text-center">Actions</div>
         </div>
+
         {students.length > 0 ? (
           students.map((std) => (
-            <div key={std.reg} className="flex justify-between items-center px-4 py-2 border-b hover:bg-gray-50">
+            <div key={std._id} className="flex justify-between items-center px-4 py-2 border-b hover:bg-gray-50">
               <div className="w-1/4">{std.reg}</div>
               <div className="w-1/2">{std.name}</div>
               <div className="w-1/4">{std.date}</div>
@@ -82,8 +97,11 @@ function App() {
                 <button className="text-blue-600 hover:text-blue-800 transition">
                   <FaEdit />
                 </button>
-                <button className="text-red-600 hover:text-red-800 transition">
-                  <IoTrashBin />
+                <button 
+                  className="text-red-600 hover:text-red-800 transition"
+                  onClick={() => deleteStudent(std._id)}  // Correctly passing _id to deleteStudent function
+                >
+                  Delete
                 </button>
               </div>
             </div>

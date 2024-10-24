@@ -43,6 +43,26 @@ app.get("/students", (req, res) => {
             res.status(500).send("Error fetching students: " + error.message);
         });
 });
+// DELETE route to delete a student
+app.delete('/students/:id', (req, res) => {
+  const id = req.params.id; // Get the student _id from the URL
+
+  // Find and delete the student by _id
+  Student.findByIdAndDelete(id)
+    .then((deletedStudent) => {
+      if (deletedStudent) {
+        res.status(200).send("Student deleted successfully");
+      } else {
+        res.status(404).send("Student not found");
+      }
+    })
+    .catch((error) => {
+      console.error("Error deleting student:", error);
+      res.status(500).send("Error deleting student: " + error.message);
+    });
+});
+
+
 
 // Start the server
 app.listen(5000, () => {
