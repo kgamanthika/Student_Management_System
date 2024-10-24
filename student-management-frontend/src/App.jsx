@@ -1,26 +1,26 @@
 import axios from 'axios';
 import { useEffect, useState } from 'react';
-import { FaEdit, FaPlus, } from "react-icons/fa";
+import { FaEdit, FaPlus } from "react-icons/fa";
 import { IoTrashBin } from "react-icons/io5";
 
 function App() {
   const [students, setStudents] = useState([]);
   const [studentLoaded, setStudentLoaded] = useState(false);
+  
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isEditMode, setIsEditMode] = useState(false); // Track whether we're adding or editing
-  const [currentStudentId, setCurrentStudentId] = useState(null); // Track the student being edited
-
   const [newStudent, setNewStudent] = useState({
     name: '',
     date: '',
     reg: ''
   });
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [currentStudentId, setCurrentStudentId] = useState(null);
 
   useEffect(() => {
     const fetchStudents = async () => {
       try {
         const res = await axios.get("http://localhost:5000/students");
-        console.log("Fetched students:", res.data);
+        console.log("Fetched students:", res.data); // Logging fetched students to check _id
         setStudents(res.data);
       } catch (err) {
         console.error("Error fetching students:", err);
@@ -41,44 +41,61 @@ function App() {
     });
   };
 
+  const resetForm = () => {
+    setNewStudent({ name: '', date: '', reg: '' });
+    setIsModalOpen(false);
+    setIsEditMode(false);
+    setCurrentStudentId(null);
+  };
+
+  const openAddStudentModal = () => {
+    resetForm(); // Reset form before adding a new student
+    setIsEditMode(false); // Ensure we're in "add" mode
+    setIsModalOpen(true);
+  };
+
   const addStudent = () => {
     axios.post("http://localhost:5000/students", newStudent)
       .then(() => {
-        setStudents([...students, newStudent]);
-        alert("Student Added");
-        resetForm();
+        // Option 1: Fetch the updated list of students to ensure UI is in sync
+        return axios.get("http://localhost:5000/students")
+          .then((response) => {
+            setStudents(response.data);  // Update the UI with the new list of students
+            alert("Student Added");
+          });
+        
+        // Option 2 (Alternative): If your backend returns the complete student object including _id
+        // setStudents([...students, res.data]);  // Append the newly added student directly to the list
       })
       .catch((err) => {
         console.error(err);
         alert("Error adding student: " + err.message);
       });
+  
+    setNewStudent({ name: '', date: '', reg: '' });  // Reset the form
+    setIsModalOpen(false);  // Close the modal
   };
+  
+  
 
-  // Edit student: Open the modal and pre-fill data
   const editStudent = (student) => {
-    setNewStudent({
-      name: student.name,
-      date: student.date,
-      reg: student.reg
-    });
-    setCurrentStudentId(student._id);
+    setNewStudent({ name: student.name, date: student.date, reg: student.reg });
     setIsEditMode(true);
+    setCurrentStudentId(student._id);
     setIsModalOpen(true);
   };
 
-  // Update student: Send PUT request
   const updateStudent = () => {
     axios.put(`http://localhost:5000/students/${currentStudentId}`, newStudent)
       .then(() => {
-        const updatedStudents = students.map(student =>
+        setStudents(students.map(student =>
           student._id === currentStudentId ? { ...student, ...newStudent } : student
-        );
-        setStudents(updatedStudents);
-        alert("Student updated successfully");
+        ));
+        alert("Student updated");
         resetForm();
       })
       .catch((err) => {
-        console.error(err);
+        console.error("Error updating student:", err);
         alert("Error updating student: " + err.message);
       });
   };
@@ -86,7 +103,7 @@ function App() {
   const deleteStudent = (id) => {
     axios.delete(`http://localhost:5000/students/${id}`)
       .then(() => {
-        setStudents(students.filter(student => student._id !== id));
+        setStudents(students.filter(student => student._id !== id)); // Update UI after deletion
         alert("Student deleted");
       })
       .catch((err) => {
@@ -95,18 +112,19 @@ function App() {
       });
   };
 
-  const resetForm = () => {
-    setNewStudent({ name: '', date: '', reg: '' });
-    setIsModalOpen(false);
-    setIsEditMode(false);
-    setCurrentStudentId(null);
+  const handleFormSubmit = () => {
+    if (isEditMode) {
+      updateStudent();
+    } else {
+      addStudent();
+    }
   };
 
   return (
     <div className="flex flex-col items-center">
       <button 
         className="fixed bottom-6 right-6 bg-blue-500 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition"
-        onClick={() => { setIsModalOpen(true); setIsEditMode(false); resetForm(); }}
+        onClick={openAddStudentModal} // Open modal for adding a new student
       >
         <FaPlus />
       </button>
@@ -130,13 +148,13 @@ function App() {
               <div className="w-1/4 flex justify-center space-x-2">
                 <button 
                   className="text-blue-600 hover:text-blue-800 transition"
-                  onClick={() => editStudent(std)}
+                  onClick={() => editStudent(std)}  // Open edit modal
                 >
                   <FaEdit />
                 </button>
                 <button 
                   className="text-red-600 hover:text-red-800 transition"
-                  onClick={() => deleteStudent(std._id)}
+                  onClick={() => deleteStudent(std._id)}  // Delete student
                 >
                   <IoTrashBin />
                 </button>
@@ -151,9 +169,7 @@ function App() {
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
-            <h2 className="text-xl font-bold mb-4">
-              {isEditMode ? "Edit Student" : "Add New Student"}
-            </h2>
+            <h2 className="text-xl font-bold mb-4">{isEditMode ? 'Edit Student' : 'Add New Student'}</h2>
             <input 
               className="w-full p-2 mb-2 border rounded" 
               type="text" 
@@ -186,9 +202,9 @@ function App() {
               </button>
               <button 
                 className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition" 
-                onClick={isEditMode ? updateStudent : addStudent}
+                onClick={handleFormSubmit}  // Add or update student based on mode
               >
-                {isEditMode ? "Update" : "Add"}
+                {isEditMode ? 'Update' : 'Add'}
               </button>
             </div>
           </div>

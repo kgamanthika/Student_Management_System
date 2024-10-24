@@ -35,7 +35,6 @@ app.post('/students', (req, res) => {
 app.get("/students", (req, res) => {
     Student.find()
         .then((students) => {
-            console.log("Students fetched:", students); // Log the fetched students
             res.send(students);
         })
         .catch((error) => {
@@ -43,48 +42,36 @@ app.get("/students", (req, res) => {
             res.status(500).send("Error fetching students: " + error.message);
         });
 });
-// DELETE route to delete a student
-app.delete('/students/:id', (req, res) => {
-  const id = req.params.id; // Get the student _id from the URL
 
-  // Find and delete the student by _id
-  Student.findByIdAndDelete(id)
-    .then((deletedStudent) => {
-      if (deletedStudent) {
-        res.status(200).send("Student deleted successfully");
-      } else {
-        res.status(404).send("Student not found");
-      }
-    })
-    .catch((error) => {
-      console.error("Error deleting student:", error);
-      res.status(500).send("Error deleting student: " + error.message);
-    });
-});
-
-// PUT route to update a student by _id
+// PUT route to update a student
 app.put('/students/:id', (req, res) => {
-  const id = req.params.id; // Get the student _id from the URL
-  const updatedData = req.body; // Get updated student data
+  const studentId = req.params.id;
+  const updatedData = req.body;
 
-  // Find the student by _id and update
-  Student.findByIdAndUpdate(id, updatedData, { new: true }) // new: true returns the updated document
+  Student.findByIdAndUpdate(studentId, updatedData, { new: true })
     .then((updatedStudent) => {
-      if (updatedStudent) {
-        res.status(200).send("Student updated successfully");
-      } else {
-        res.status(404).send("Student not found");
-      }
+      res.status(200).send(updatedStudent);
     })
     .catch((error) => {
-      console.error("Error updating student:", error);
       res.status(500).send("Error updating student: " + error.message);
     });
 });
 
+// DELETE route to delete a student
+app.delete('/students/:id', (req, res) => {
+  const studentId = req.params.id;
 
+  Student.findByIdAndDelete(studentId)
+    .then(() => {
+      res.status(200).send("Student deleted");
+    })
+    .catch((error) => {
+      res.status(500).send("Error deleting student: " + error.message);
+    });
+});
 
 // Start the server
-app.listen(5000, () => {
-  console.log('Server is running on port 5000');
+const port = 5000;
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
 });
