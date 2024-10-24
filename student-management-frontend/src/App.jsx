@@ -6,12 +6,21 @@ import { IoTrashBin } from "react-icons/io5";
 function App() {
   const [students, setStudents] = useState([]);
   const [studentLoaded, setStudentLoaded] = useState(false);
-  
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false); // Track whether we're adding or editing
+  const [currentStudentId, setCurrentStudentId] = useState(null); // Track the student being edited
+
+  const [newStudent, setNewStudent] = useState({
+    name: '',
+    date: '',
+    reg: ''
+  });
+
   useEffect(() => {
     const fetchStudents = async () => {
       try {
         const res = await axios.get("http://localhost:5000/students");
-        console.log("Fetched students:", res.data); // Logging fetched students to check _id
+        console.log("Fetched students:", res.data);
         setStudents(res.data);
       } catch (err) {
         console.error("Error fetching students:", err);
@@ -25,13 +34,6 @@ function App() {
     }
   }, [studentLoaded]);
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newStudent, setNewStudent] = useState({
-    name: '',
-    date: '',
-    reg: ''
-  });
-
   const handleInputChange = (e) => {
     setNewStudent({
       ...newStudent,
@@ -44,21 +46,47 @@ function App() {
       .then(() => {
         setStudents([...students, newStudent]);
         alert("Student Added");
+        resetForm();
       })
       .catch((err) => {
         console.error(err);
         alert("Error adding student: " + err.message);
       });
-
-    setNewStudent({ name: '', date: '', reg: '' });
-    setIsModalOpen(false);
   };
 
-  // Delete student by _id
+  // Edit student: Open the modal and pre-fill data
+  const editStudent = (student) => {
+    setNewStudent({
+      name: student.name,
+      date: student.date,
+      reg: student.reg
+    });
+    setCurrentStudentId(student._id);
+    setIsEditMode(true);
+    setIsModalOpen(true);
+  };
+
+  // Update student: Send PUT request
+  const updateStudent = () => {
+    axios.put(`http://localhost:5000/students/${currentStudentId}`, newStudent)
+      .then(() => {
+        const updatedStudents = students.map(student =>
+          student._id === currentStudentId ? { ...student, ...newStudent } : student
+        );
+        setStudents(updatedStudents);
+        alert("Student updated successfully");
+        resetForm();
+      })
+      .catch((err) => {
+        console.error(err);
+        alert("Error updating student: " + err.message);
+      });
+  };
+
   const deleteStudent = (id) => {
     axios.delete(`http://localhost:5000/students/${id}`)
       .then(() => {
-        setStudents(students.filter(student => student._id !== id)); // Update UI after deletion
+        setStudents(students.filter(student => student._id !== id));
         alert("Student deleted");
       })
       .catch((err) => {
@@ -67,13 +95,18 @@ function App() {
       });
   };
 
-  
+  const resetForm = () => {
+    setNewStudent({ name: '', date: '', reg: '' });
+    setIsModalOpen(false);
+    setIsEditMode(false);
+    setCurrentStudentId(null);
+  };
 
   return (
     <div className="flex flex-col items-center">
       <button 
         className="fixed bottom-6 right-6 bg-blue-500 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition"
-        onClick={() => setIsModalOpen(true)}
+        onClick={() => { setIsModalOpen(true); setIsEditMode(false); resetForm(); }}
       >
         <FaPlus />
       </button>
@@ -95,12 +128,15 @@ function App() {
               <div className="w-1/2">{std.name}</div>
               <div className="w-1/4">{std.date}</div>
               <div className="w-1/4 flex justify-center space-x-2">
-                <button className="text-blue-600 hover:text-blue-800 transition">
+                <button 
+                  className="text-blue-600 hover:text-blue-800 transition"
+                  onClick={() => editStudent(std)}
+                >
                   <FaEdit />
                 </button>
                 <button 
                   className="text-red-600 hover:text-red-800 transition"
-                  onClick={() => deleteStudent(std._id)}  // Correctly passing _id to deleteStudent function
+                  onClick={() => deleteStudent(std._id)}
                 >
                   <IoTrashBin />
                 </button>
@@ -115,7 +151,9 @@ function App() {
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
-            <h2 className="text-xl font-bold mb-4">Add New Student</h2>
+            <h2 className="text-xl font-bold mb-4">
+              {isEditMode ? "Edit Student" : "Add New Student"}
+            </h2>
             <input 
               className="w-full p-2 mb-2 border rounded" 
               type="text" 
@@ -148,9 +186,9 @@ function App() {
               </button>
               <button 
                 className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition" 
-                onClick={addStudent}
+                onClick={isEditMode ? updateStudent : addStudent}
               >
-                Add
+                {isEditMode ? "Update" : "Add"}
               </button>
             </div>
           </div>

@@ -62,6 +62,26 @@ app.delete('/students/:id', (req, res) => {
     });
 });
 
+// PUT route to update a student by _id
+app.put('/students/:id', (req, res) => {
+  const id = req.params.id; // Get the student _id from the URL
+  const updatedData = req.body; // Get updated student data
+
+  // Find the student by _id and update
+  Student.findByIdAndUpdate(id, updatedData, { new: true }) // new: true returns the updated document
+    .then((updatedStudent) => {
+      if (updatedStudent) {
+        res.status(200).send("Student updated successfully");
+      } else {
+        res.status(404).send("Student not found");
+      }
+    })
+    .catch((error) => {
+      console.error("Error updating student:", error);
+      res.status(500).send("Error updating student: " + error.message);
+    });
+});
+
 
 
 // Start the server
