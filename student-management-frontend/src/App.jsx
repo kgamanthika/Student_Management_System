@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { useEffect, useState } from 'react';
-import { FaEdit, FaPlus } from "react-icons/fa";
+import { FaEdit, FaPlus, } from "react-icons/fa";
+import { IoTrashBin } from "react-icons/io5";
 
 function App() {
   const [students, setStudents] = useState([]);
@@ -101,7 +102,7 @@ function App() {
                   className="text-red-600 hover:text-red-800 transition"
                   onClick={() => deleteStudent(std._id)}  // Correctly passing _id to deleteStudent function
                 >
-                  Delete
+                  <IoTrashBin />
                 </button>
               </div>
             </div>
