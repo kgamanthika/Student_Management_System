@@ -2,6 +2,8 @@ import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { FaEdit, FaPlus } from "react-icons/fa";
 import { IoTrashBin } from "react-icons/io5";
+import { ToastContainer, toast } from 'react-toastify'; // Import Toastify
+import 'react-toastify/dist/ReactToastify.css'; // Import styles
 
 function App() {
   const [students, setStudents] = useState([]);
@@ -24,7 +26,7 @@ function App() {
         setStudents(res.data);
       } catch (err) {
         console.error("Error fetching students:", err);
-        alert("Error fetching students: " + err.message);
+        toast.error("Error fetching students: " + err.message); // Show error alert
       }
     };
 
@@ -61,23 +63,18 @@ function App() {
         return axios.get("http://localhost:5000/students")
           .then((response) => {
             setStudents(response.data);  // Update the UI with the new list of students
-            alert("Student Added");
+            toast.success("Student Added!"); // Success alert
           });
-        
-        // Option 2 (Alternative): If your backend returns the complete student object including _id
-        // setStudents([...students, res.data]);  // Append the newly added student directly to the list
       })
       .catch((err) => {
         console.error(err);
-        alert("Error adding student: " + err.message);
+        toast.error("Error adding student: " + err.message); // Error alert
       });
-  
+
     setNewStudent({ name: '', date: '', reg: '' });  // Reset the form
     setIsModalOpen(false);  // Close the modal
   };
   
-  
-
   const editStudent = (student) => {
     setNewStudent({ name: student.name, date: student.date, reg: student.reg });
     setIsEditMode(true);
@@ -91,12 +88,12 @@ function App() {
         setStudents(students.map(student =>
           student._id === currentStudentId ? { ...student, ...newStudent } : student
         ));
-        alert("Student updated");
+        toast.success("Student updated"); // Success alert
         resetForm();
       })
       .catch((err) => {
         console.error("Error updating student:", err);
-        alert("Error updating student: " + err.message);
+        toast.error("Error updating student: " + err.message); // Error alert
       });
   };
 
@@ -104,11 +101,11 @@ function App() {
     axios.delete(`http://localhost:5000/students/${id}`)
       .then(() => {
         setStudents(students.filter(student => student._id !== id)); // Update UI after deletion
-        alert("Student deleted");
+        toast.success("Student deleted"); // Success alert
       })
       .catch((err) => {
         console.error("Error deleting student:", err);
-        alert("Error deleting student: " + err.message);
+        toast.error("Error deleting student: " + err.message); // Error alert
       });
   };
 
@@ -210,6 +207,8 @@ function App() {
           </div>
         </div>
       )}
+
+      <ToastContainer /> {/* Container for Toast notifications */}
     </div>
   );
 }
