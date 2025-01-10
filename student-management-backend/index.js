@@ -10,7 +10,8 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-const mongoUrl = "mongodb+srv://user:amesh2318@cluster0.w8lnv.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+const mongoUrl = "mongodb+srv://user:1234@cluster0.w8lnv.mongodb.net/database-name?retryWrites=true&w=majority"
+
 
 // Connect to MongoDB
 mongoose.connect(mongoUrl)
