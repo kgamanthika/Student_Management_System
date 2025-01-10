@@ -2,6 +2,8 @@ import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { FaEdit, FaPlus } from "react-icons/fa";
 import { IoTrashBin } from "react-icons/io5";
+import { ToastContainer, toast } from 'react-toastify'; // Import Toastify
+import 'react-toastify/dist/ReactToastify.css'; // Import styles
 
 function App() {
   const [students, setStudents] = useState([]);
@@ -15,10 +17,9 @@ function App() {
   });
   const [isEditMode, setIsEditMode] = useState(false);
   const [currentStudentId, setCurrentStudentId] = useState(null);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [studentToDelete, setStudentToDelete] = useState(null);
-  const [alertMessage, setAlertMessage] = useState('');
-  const [alertType, setAlertType] = useState('');
+  
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);  // New state for delete confirmation modal
+  const [studentToDelete, setStudentToDelete] = useState(null); // To store the student ID for deletion
 
   useEffect(() => {
     const fetchStudents = async () => {
@@ -28,7 +29,7 @@ function App() {
         setStudents(res.data);
       } catch (err) {
         console.error("Error fetching students:", err);
-        showAlert("Error fetching students: " + err.message, 'error');
+        toast.error("Error fetching students: " + err.message); // Show error alert
       }
     };
 
@@ -52,14 +53,6 @@ function App() {
     setCurrentStudentId(null);
   };
 
-  const showAlert = (message, type) => {
-    setAlertMessage(message);
-    setAlertType(type);
-    setTimeout(() => {
-      setAlertMessage('');
-    }, 3000);
-  };
-
   const openAddStudentModal = () => {
     resetForm(); // Reset form before adding a new student
     setIsEditMode(false); // Ensure we're in "add" mode
@@ -69,20 +62,22 @@ function App() {
   const addStudent = () => {
     axios.post("http://localhost:5000/students", newStudent)
       .then(() => {
+        // Option 1: Fetch the updated list of students to ensure UI is in sync
         return axios.get("http://localhost:5000/students")
           .then((response) => {
-            setStudents(response.data);
-            showAlert("Student Added", 'success');
+            setStudents(response.data);  // Update the UI with the new list of students
+            toast.success("Student Added!"); // Success alert
           });
       })
       .catch((err) => {
         console.error(err);
-        showAlert("Error adding student: " + err.message, 'error');
+        toast.error("Error adding student: " + err.message); // Error alert
       });
 
-    resetForm();
+    setNewStudent({ name: '', date: '', reg: '' });  // Reset the form
+    setIsModalOpen(false);  // Close the modal
   };
-
+  
   const editStudent = (student) => {
     setNewStudent({ name: student.name, date: student.date, reg: student.reg });
     setIsEditMode(true);
@@ -96,31 +91,26 @@ function App() {
         setStudents(students.map(student =>
           student._id === currentStudentId ? { ...student, ...newStudent } : student
         ));
-        showAlert("Student updated", 'success');
+        toast.success("Student updated"); // Success alert
         resetForm();
       })
       .catch((err) => {
         console.error("Error updating student:", err);
-        showAlert("Error updating student: " + err.message, 'error');
+        toast.error("Error updating student: " + err.message); // Error alert
       });
   };
 
-  const openDeleteModal = (student) => {
-    setStudentToDelete(student);
-    setIsDeleteModalOpen(true);
-  };
-
   const deleteStudent = () => {
-    axios.delete(`http://localhost:5000/students/${studentToDelete._id}`)
+    axios.delete(`http://localhost:5000/students/${studentToDelete}`)
       .then(() => {
-        setStudents(students.filter(student => student._id !== studentToDelete._id)); // Update UI after deletion
-        showAlert("Student deleted", 'success');
-        setIsDeleteModalOpen(false);  // Close the delete modal after deletion
+        setStudents(students.filter(student => student._id !== studentToDelete)); // Update UI after deletion
+        toast.success("Student deleted"); // Success alert
+        setIsDeleteModalOpen(false); // Close the delete confirmation modal
       })
       .catch((err) => {
         console.error("Error deleting student:", err);
-        showAlert("Error deleting student: " + err.message, 'error');
-        setIsDeleteModalOpen(false);  // Close the modal if there's an error
+        toast.error("Error deleting student: " + err.message); // Error alert
+        setIsDeleteModalOpen(false); // Close the delete confirmation modal
       });
   };
 
@@ -130,6 +120,11 @@ function App() {
     } else {
       addStudent();
     }
+  };
+
+  const confirmDelete = (studentId) => {
+    setStudentToDelete(studentId); // Set the student ID to delete
+    setIsDeleteModalOpen(true); // Open the delete confirmation modal
   };
 
   return (
@@ -166,7 +161,7 @@ function App() {
                 </button>
                 <button 
                   className="text-red-600 hover:text-red-800 transition"
-                  onClick={() => openDeleteModal(std)}  // Open delete confirmation modal
+                  onClick={() => confirmDelete(std._id)}  // Confirm before delete
                 >
                   <IoTrashBin />
                 </button>
@@ -177,12 +172,6 @@ function App() {
           <div className="text-center py-4">No students found.</div>
         )}
       </div>
-
-      {alertMessage && (
-        <div className={`fixed top-0 left-0 right-0 p-4 text-white text-center ${alertType === 'success' ? 'bg-green-500' : 'bg-red-500'}`}>
-          {alertMessage}
-        </div>
-      )}
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
@@ -229,27 +218,31 @@ function App() {
         </div>
       )}
 
+      {/* Delete Confirmation Modal */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
-            <h2 className="text-xl font-bold mb-4">Are you sure you want to delete this student?</h2>
+            <h2 className="text-xl font-bold mb-4">Confirm Delete</h2>
+            <p className="mb-4">Are you sure you want to delete this student?</p>
             <div className="flex justify-end space-x-2">
               <button 
                 className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 transition" 
                 onClick={() => setIsDeleteModalOpen(false)}
               >
-                No
+                Cancel
               </button>
               <button 
                 className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition" 
-                onClick={deleteStudent}  // Delete student
+                onClick={deleteStudent}  // Proceed with deletion
               >
-                Yes
+                Delete
               </button>
             </div>
           </div>
         </div>
       )}
+
+      <ToastContainer /> {/* Container for Toast notifications */}
     </div>
   );
 }
